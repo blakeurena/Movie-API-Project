@@ -6,7 +6,7 @@ A responsive **Movie Poster Web App** built with **HTML, CSS, and JavaScript**, 
 
 ## 🚀 Live Demo
 
-👉 *Add your deployed link here (GitHub Pages / Netlify / Vercel)*
+👉  https://blakeurena.github.io/Movie-API-Project/
 
 ---
 
