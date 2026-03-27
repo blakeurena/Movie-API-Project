@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fast & Furious Movie Posters</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <section id="landing">
+    <nav>
+      <div class="nav__container">
+        <div class="logo">Fast<span class="accent">&</span>Furious</div>
+        <ul class="nav__links">
+          <li><a href="#landing" class="nav__link" onclick="scrollToTop(event)">Home</a></li>
+          <li><a href="#movies" class="nav__link nav__link--primary">Movies</a></li>
+          <li><a href="#" class="nav__link nav__link--disabled">Contact</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <header class="header">
+      <div class="container">
+        <div class="row">
+          <div class="header__content">
+            <p class="header__tag">Movie Poster Collection</p>
+            <h1>Fast & Furious Series</h1>
+            <p class="header__para">
+              Explore the Fast & Furious franchise with a cinematic movie poster layout,
+              responsive design, and a working sorting filter.
+            </p>
+            <a href="#movies">
+              <button class="btn">Browse Movies</button>
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+  </section>
+
+  <main>
+    <section id="movies">
+      <div class="container">
+        <div class="row">
+          <div class="movies__header">
+            <div>
+              <p class="section__tag">Franchise Collection</p>
+              <h2 class="section__title">Fast & Furious <span class="accent">Movies</span></h2>
+            </div>
+
+            <select id="sortFilter" onchange="sortMovies(event)">
+              <option value="" disabled selected>Sort</option>
+              <option value="A_TO_Z">Alphabetical A to Z</option>
+              <option value="Z_TO_A">Alphabetical Z to A</option>
+              <option value="NEW_TO_OLD">Newest to Oldest</option>
+              <option value="OLD_TO_NEW">Oldest to Newest</option>
+            </select>
+          </div>
+
+          <div class="movies" id="moviesList"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="footer">
+    <div class="container">
+      <div class="row row__column">
+        <div class="footer__logo">Fast<span class="accent">&</span>Furious</div>
+        <div class="footer__links">
+          <a href="#landing" class="footer__link">Home</a>
+          <a href="#movies" class="footer__link">Movies</a>
+          <a class="footer__link footer__link--disabled">Contact</a>
+        </div>
+        <div class="footer__copyright">
+          Copyright &copy; 2026 Fast & Furious Movie Posters
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
