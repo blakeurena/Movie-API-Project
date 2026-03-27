@@ -14,8 +14,11 @@ const movieTitles = [
 ];
 
 let movies = [];
+let filteredMovies = [];
 
 async function fetchMovies() {
+  const moviesList = document.getElementById("moviesList");
+
   try {
     const promises = movieTitles.map((movie) =>
       fetch(
@@ -25,35 +28,28 @@ async function fetchMovies() {
       ).then((res) => res.json())
     );
 
-    function scrollToTop(event) {
-  event.preventDefault();
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
-}
-
     const movieResults = await Promise.all(promises);
 
-    movies = movieResults.map((movie, index) => ({
-      id: index + 1,
-      title: movie.Title,
-      year: Number(movie.Year),
-      order: index + 1,
-      poster:
-        movie.Poster && movie.Poster !== "N/A"
-          ? movie.Poster
-          : "https://via.placeholder.com/300x450?text=No+Image",
-      description:
-        movie.Plot && movie.Plot !== "N/A"
-          ? movie.Plot
-          : "No description available."
-    }));
+    movies = movieResults
+      .filter((movie) => movie.Response !== "False")
+      .map((movie, index) => ({
+        id: index + 1,
+        title: movie.Title || "Unknown Title",
+        year: Number(movie.Year) || 0,
+        order: index + 1,
+        poster:
+          movie.Poster && movie.Poster !== "N/A"
+            ? movie.Poster
+            : "https://via.placeholder.com/300x450?text=No+Image",
+        description:
+          movie.Plot && movie.Plot !== "N/A"
+            ? movie.Plot
+            : "No description available."
+      }));
 
-    renderMovies(movies);
+    filteredMovies = [...movies];
+    renderMovies(filteredMovies);
   } catch (error) {
-    const moviesList = document.getElementById("moviesList");
     moviesList.innerHTML = `<p class="error-message">Failed to load movies.</p>`;
     console.error(error);
   }
@@ -81,12 +77,32 @@ function movieCardHTML(movie) {
 
 function renderMovies(movieArray) {
   const moviesList = document.getElementById("moviesList");
+
+  if (!movieArray.length) {
+    moviesList.innerHTML = `<p class="error-message">No movies found.</p>`;
+    return;
+  }
+
   moviesList.innerHTML = movieArray.map((movie) => movieCardHTML(movie)).join("");
 }
 
+function searchMovies(event) {
+  const searchTerm = event.target.value.toLowerCase().trim();
+
+  filteredMovies = movies.filter((movie) =>
+    movie.title.toLowerCase().includes(searchTerm)
+  );
+
+  const sortValue = document.getElementById("sortFilter").value;
+  applySort(sortValue);
+}
+
 function sortMovies(event) {
-  const value = event.target.value;
-  const sortedMovies = [...movies];
+  applySort(event.target.value);
+}
+
+function applySort(value) {
+  const sortedMovies = [...filteredMovies];
 
   if (value === "A_TO_Z") {
     sortedMovies.sort((a, b) => a.title.localeCompare(b.title));
@@ -99,6 +115,14 @@ function sortMovies(event) {
   }
 
   renderMovies(sortedMovies);
+}
+
+function scrollToTop(event) {
+  event.preventDefault();
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
 }
 
 fetchMovies();
