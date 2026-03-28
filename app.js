@@ -1,120 +1,121 @@
 const API_KEY = "4f03059d";
 
-const movieTitles = [
-  { title: "The Fast and the Furious", year: 2001 },
-  { title: "2 Fast 2 Furious", year: 2003 },
-  { title: "The Fast and the Furious: Tokyo Drift", year: 2006 },
-  { title: "Fast & Furious", year: 2009 },
-  { title: "Fast Five", year: 2011 },
-  { title: "Fast & Furious 6", year: 2013 },
-  { title: "Furious 7", year: 2015 },
-  { title: "The Fate of the Furious", year: 2017 },
-  { title: "F9", year: 2021 },
-  { title: "Fast X", year: 2023 }
-];
+let allMovies = [];
+let displayedMovies = [];
+let currentSort = "";
 
-let movies = [];
-let filteredMovies = [];
+const searchForm = document.getElementById("search-form");
+const searchInput = document.getElementById("search-input");
+const statusMessage = document.getElementById("status-message");
+const moviesContainer = document.getElementById("movie-container");
+const sortFilter = document.getElementById("sortFilter");
 
-async function fetchMovies() {
-  const moviesList = document.getElementById("moviesList");
-
+async function fetchMovies(searchTerm = "Fast & Furious") {
   try {
-    const promises = movieTitles.map((movie) =>
-      fetch(
-        `https://www.omdbapi.com/?apikey=${API_KEY}&t=${encodeURIComponent(
-          movie.title
-        )}&y=${movie.year}`
-      ).then((res) => res.json())
+    showStatus("Loading movies...");
+    moviesContainer.innerHTML = "";
+
+    const response = await fetch(
+      `https://www.omdbapi.com/?apikey=${API_KEY}&s=${encodeURIComponent(searchTerm)}`
     );
 
-    const movieResults = await Promise.all(promises);
+    const data = await response.json();
 
-    movies = movieResults
-      .filter((movie) => movie.Response !== "False")
-      .map((movie, index) => ({
-        id: index + 1,
-        title: movie.Title || "Unknown Title",
-        year: Number(movie.Year) || 0,
-        order: index + 1,
-        poster:
-          movie.Poster && movie.Poster !== "N/A"
-            ? movie.Poster
-            : "https://via.placeholder.com/300x450?text=No+Image",
-        description:
-          movie.Plot && movie.Plot !== "N/A"
-            ? movie.Plot
-            : "No description available."
-      }));
+    if (data.Response === "False") {
+      allMovies = [];
+      displayedMovies = [];
+      moviesContainer.innerHTML = "";
+      showStatus(data.Error || "No movies found.");
+      return;
+    }
 
-    filteredMovies = [...movies];
-    renderMovies(filteredMovies);
+    const detailedMovies = await Promise.all(
+      data.Search.map(async (movie) => {
+        const detailResponse = await fetch(
+          `https://www.omdbapi.com/?apikey=${API_KEY}&i=${movie.imdbID}`
+        );
+        return await detailResponse.json();
+      })
+    );
+
+    allMovies = detailedMovies;
+    displayedMovies = [...allMovies];
+
+    applySort();
+    renderMovies(displayedMovies);
+    clearStatus();
   } catch (error) {
-    moviesList.innerHTML = `<p class="error-message">Failed to load movies.</p>`;
-    console.error(error);
+    console.error("Error fetching movies:", error);
+    moviesContainer.innerHTML = "";
+    showStatus("Something went wrong while fetching movies.");
   }
 }
 
-function movieCardHTML(movie) {
-  return `
-    <div class="movie">
-      <div class="movie__card">
-        <figure class="movie__poster--wrapper">
-          <img class="movie__poster" src="${movie.poster}" alt="${movie.title} poster">
-        </figure>
-        <div class="movie__body">
-          <div class="movie__top">
-            <h3 class="movie__title">${movie.title}</h3>
-            <span class="movie__year">${movie.year}</span>
-          </div>
-          <p class="movie__subtitle">Film #${movie.order} in the franchise</p>
-          <p class="movie__description">${movie.description}</p>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function renderMovies(movieArray) {
-  const moviesList = document.getElementById("moviesList");
-
-  if (!movieArray.length) {
-    moviesList.innerHTML = `<p class="error-message">No movies found.</p>`;
+function renderMovies(movies) {
+  if (!movies.length) {
+    moviesContainer.innerHTML = "";
+    showStatus("No movies found.");
     return;
   }
 
-  moviesList.innerHTML = movieArray.map((movie) => movieCardHTML(movie)).join("");
+  moviesContainer.innerHTML = movies
+    .map((movie) => {
+      return `
+        <div class="movie">
+          <figure class="movie__img--wrapper">
+            <img
+              class="movie__img"
+              src="${
+                movie.Poster && movie.Poster !== "N/A"
+                  ? movie.Poster
+                  : "https://via.placeholder.com/300x450?text=No+Poster"
+              }"
+              alt="${movie.Title}"
+            >
+          </figure>
+          <div class="movie__body">
+            <h3 class="movie__title">${movie.Title}</h3>
+            <p class="movie__year">${movie.Year || "N/A"}</p>
+            <p class="movie__type">${movie.Type || "N/A"}</p>
+            <p class="movie__rating">IMDb: ${movie.imdbRating || "N/A"}</p>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
 }
 
-function searchMovies(event) {
-  const searchTerm = event.target.value.toLowerCase().trim();
+function applySort() {
+  if (currentSort === "A_TO_Z") {
+    displayedMovies.sort((a, b) => a.Title.localeCompare(b.Title));
+  } else if (currentSort === "Z_TO_A") {
+    displayedMovies.sort((a, b) => b.Title.localeCompare(a.Title));
+  } else if (currentSort === "NEW_TO_OLD") {
+    displayedMovies.sort((a, b) => getYear(b.Year) - getYear(a.Year));
+  } else if (currentSort === "OLD_TO_NEW") {
+    displayedMovies.sort((a, b) => getYear(a.Year) - getYear(b.Year));
+  }
+}
 
-  filteredMovies = movies.filter((movie) =>
-    movie.title.toLowerCase().includes(searchTerm)
-  );
-
-  const sortValue = document.getElementById("sortFilter").value;
-  applySort(sortValue);
+function getYear(yearString) {
+  if (!yearString) return 0;
+  const match = yearString.match(/\d{4}/);
+  return match ? Number(match[0]) : 0;
 }
 
 function sortMovies(event) {
-  applySort(event.target.value);
+  currentSort = event.target.value;
+  displayedMovies = [...allMovies];
+  applySort();
+  renderMovies(displayedMovies);
 }
 
-function applySort(value) {
-  const sortedMovies = [...filteredMovies];
+function showStatus(message) {
+  statusMessage.textContent = message;
+}
 
-  if (value === "A_TO_Z") {
-    sortedMovies.sort((a, b) => a.title.localeCompare(b.title));
-  } else if (value === "Z_TO_A") {
-    sortedMovies.sort((a, b) => b.title.localeCompare(a.title));
-  } else if (value === "NEW_TO_OLD") {
-    sortedMovies.sort((a, b) => b.year - a.year);
-  } else if (value === "OLD_TO_NEW") {
-    sortedMovies.sort((a, b) => a.year - b.year);
-  }
-
-  renderMovies(sortedMovies);
+function clearStatus() {
+  statusMessage.textContent = "";
 }
 
 function scrollToTop(event) {
@@ -125,4 +126,22 @@ function scrollToTop(event) {
   });
 }
 
-fetchMovies();
+searchForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const searchTerm = searchInput.value.trim();
+
+  if (!searchTerm) {
+    fetchMovies("Fast & Furious");
+    return;
+  }
+
+  fetchMovies(searchTerm);
+});
+
+window.sortMovies = sortMovies;
+window.scrollToTop = scrollToTop;
+
+document.addEventListener("DOMContentLoaded", () => {
+  fetchMovies("Fast & Furious");
+});
